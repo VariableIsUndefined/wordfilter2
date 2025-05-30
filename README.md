@@ -86,7 +86,8 @@ wf.save_to_file("output_words.txt")
 
 -----
 
-This project is licensed under the MIT License. See [LICENSE.md](https://github.com/VariableIsUndefined/wordfilter2/LICENSE.md) for details.
+This project is licensed under the MIT License.
+See [LICENSE.md](https://github.com/VariableIsUndefined/wordfilter2/blob/master/LICENSE.md) for details.
 
 
 -----
