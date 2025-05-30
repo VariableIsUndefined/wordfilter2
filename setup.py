@@ -7,16 +7,15 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="wordfilter2",
-    version="0.1.1",
+    version="1.0.0",
     license="MIT",
     author="VariableIsUndefined",
     description="A simple word filter module for Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/VariableIsUndefined/wordfilter2",
-    py_modules=["wordfilter2"],
-    package_dir={"": "lib"},
     python_requires=">=3.6",
+    packages=["wordfilter2"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
@@ -33,6 +32,6 @@ setup(
         "Natural Language :: English",
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
     ]
 )
