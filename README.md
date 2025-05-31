@@ -1,6 +1,8 @@
 # wordfilter2
 
-`wordfilter2` is a lightweight and flexible Python module for filtering and censoring words in text. It is designed to detect and optionally replace offensive, sensitive, or unwanted terms using customizable options such as case sensitivity, partial matching, and replacement strategies.
+`wordfilter2` is a lightweight and fast Python module for filtering and censoring words in text. It is designed to
+detect and optionally replace offensive, sensitive, or unwanted terms using customizable options such as case
+sensitivity, partial matching, and replacement strategies.
 
 ## Features
 
@@ -91,7 +93,7 @@ wf.save_to_file("output_words.txt")
 -----
 
 This project is licensed under the MIT License.
-See [LICENSE.md](https://github.com/VariableIsUndefined/wordfilter2/blob/master/LICENSE.md) for details.
+See [LICENSE](https://github.com/VariableIsUndefined/wordfilter2/blob/master/LICENSE.md) for details.
 
 
 -----
