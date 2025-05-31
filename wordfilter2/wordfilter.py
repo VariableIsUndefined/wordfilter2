@@ -117,30 +117,27 @@ class WordFilter:
         if not isinstance(text, str):
             raise TypeError('Text must be a string')
 
-        def replace(match: re.Match) -> str:
-            word = match.group()
-            if self.replace_with_func is not None:
-                return self.replace_with_func(word)
-
-            replacement = self.replace_with * len(word) if len(self.replace_with) == 1 else self.replace_with
-            return replacement.strip()
-
         if not self.words:
             return text
 
         normalized_banned = set(map(self.normalize, self.words))
-        words_pattern = '|'.join(re.escape(word) for word in normalized_banned)
-
+        pattern_str = "|".join(re.escape(word) for word in normalized_banned)
         if self.partial_match:
-            pattern = fr'({words_pattern})'
+            pattern = f"({pattern_str})"
         else:
-            pattern = fr'\b({words_pattern})\b'
+            pattern = f"\\b({pattern_str})\\b"
 
         flags = re.IGNORECASE if self.ignore_case else 0
         regex = re.compile(pattern, flags | re.UNICODE)
-        result = regex.sub(replace, text)
 
-        return re.sub(" +", " ", result)
+        def replace(match: re.Match) -> str:
+            word = match.group()
+            if self.replace_with_func:
+                return self.replace_with_func(word)
+            return self.replace_with * len(word) if len(self.replace_with) == 1 else self.replace_with
+
+        result = regex.sub(replace, text)
+        return re.sub(" +", " ", result).strip()
 
     def contains_profanity(self, text: str) -> bool:
         """
@@ -162,11 +159,14 @@ class WordFilter:
         if not isinstance(text, str):
             raise TypeError('Text must be a string')
 
-        normalized_banned = set(map(self.normalize, self.words))
-        words_pattern = '|'.join(re.escape(word) for word in normalized_banned)
-        pattern = fr'\b(?:{words_pattern})\b' if not self.partial_match else fr'(?:{words_pattern})'
-        regex = re.compile(pattern, re.IGNORECASE if self.ignore_case else 0)
+        if not self.words:
+            return False
 
+        normalized_banned = set(map(self.normalize, self.words))
+        pattern_str = "|".join(re.escape(word) for word in normalized_banned)
+        pattern = f"({pattern_str})" if self.partial_match else f"\\b({pattern_str})\\b"
+        flags = re.IGNORECASE if self.ignore_case else 0
+        regex = re.compile(pattern, flags | re.UNICODE)
         return bool(regex.search(text))
 
     def load_from_file(self, path: str) -> None:
@@ -183,25 +183,23 @@ class WordFilter:
             ValueError: If the JSON list has non-strings elements.
         """
         if not isinstance(path, str):
-            raise TypeError('Path must be a string')
-
+            raise TypeError("Path must be a string")
         if not os.path.isfile(path):
-            raise FileNotFoundError(f'File {path} not found')
+            raise FileNotFoundError(f"File {path} not found")
 
-        path_ext = path.split(".")[-1]
+        ext = os.path.splitext(path)[1][1:].lower()
+        if ext not in self.ALLOWED_EXTENSIONS:
+            raise ValueError(f"File extension '{ext}' not allowed")
 
-        if path_ext not in self.ALLOWED_EXTENSIONS:
-            raise ValueError(f'File extension {path_ext!r} not allowed')
-
-        with open(path, 'r', encoding='utf-8') as file:
-            if path_ext == "json":
-                data = json.load(file)
+        with open(path, encoding="utf-8") as f:
+            if ext == "json":
+                data = json.load(f)
                 if not isinstance(data, list) or not all(isinstance(item, str) for item in data):
-                    raise ValueError('File must contain a list of strings')
+                    raise ValueError("File must contain a list of strings")
                 self.add_words(data)
-            elif path_ext == "txt":
-                for line in file:
-                    self.add_word(line)
+            else:
+                for line in f:
+                    self.add_word(line.strip())
 
     def save_to_file(self, path: str) -> None:
         """
@@ -216,9 +214,9 @@ class WordFilter:
         if not isinstance(path, str):
             raise TypeError('Path must be a string')
 
-        with open(path, 'w', encoding='utf-8') as file:
-            for word in self.words:
-                file.write(word + '\n')
+        with open(path, "w", encoding="utf-8") as f:
+            for word in sorted(self.words):
+                f.write(word + "\n")
 
     def load_from_url(self, url: str) -> None:
         """
@@ -234,25 +232,22 @@ class WordFilter:
         """
 
         if not isinstance(url, str):
-            raise TypeError('URL must be a string')
-
+            raise TypeError("URL must be a string")
         response = requests.get(url)
         response.raise_for_status()
+        content_type = response.headers.get("Content-Type", "")
 
-        content_type = response.headers['Content-Type']
-
-        if 'json' in content_type:
+        if "json" in content_type:
             data = response.json()
             if not isinstance(data, list) or not all(isinstance(item, str) for item in data):
-                raise ValueError('Remote file must contain a list of strings')
+                raise ValueError("Remote file must contain a list of strings")
             self.add_words(data)
-        elif 'text/plain' in content_type:
-            lines = response.text.splitlines()
-            for line in lines:
+        elif "text/plain" in content_type:
+            for line in response.text.splitlines():
                 self.add_word(line.strip())
         else:
-            raise ValueError(f'Unsupported Content-Type: {content_type}')
+            raise ValueError(f"Unsupported Content-Type: {content_type}")
 
-    def clear(self):
+    def clear(self) -> None:
         """Remove all filtered words"""
         self.words.clear()
