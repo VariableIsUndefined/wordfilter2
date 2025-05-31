@@ -132,8 +132,9 @@ class WordFilter:
 
         flags = re.IGNORECASE if self.ignore_case else 0
         regex = re.compile(pattern, flags)
+        result = regex.sub(replace, text)
 
-        return regex.sub(replace, text)
+        return re.sub(" +", " ", result)
 
     def contains_profanity(self, text: str) -> bool:
         """
