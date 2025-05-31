@@ -217,3 +217,7 @@ class WordFilter:
         with open(path, 'w', encoding='utf-8') as file:
             for word in self.words:
                 file.write(word + '\n')
+
+    def clear(self):
+        """Remove all filtered words"""
+        self.words.clear()
