@@ -3,6 +3,8 @@ import re
 import json
 from typing import Callable
 
+import requests
+
 
 class WordFilter:
     ALLOWED_EXTENSIONS = {
@@ -217,6 +219,39 @@ class WordFilter:
         with open(path, 'w', encoding='utf-8') as file:
             for word in self.words:
                 file.write(word + '\n')
+
+    def load_from_url(self, url: str) -> None:
+        """
+        Load words from a remote file (txt or json).
+
+        Args:
+            url (str): URL to the remote file.
+
+        Raises:
+            TypeError: If url is not a string.
+            ValueError: If JSON does not contain any strings.
+            ValueError: if Content-Type is not supported.
+        """
+
+        if not isinstance(url, str):
+            raise TypeError('URL must be a string')
+
+        response = requests.get(url)
+        response.raise_for_status()
+
+        content_type = response.headers['Content-Type']
+
+        if 'json' in content_type:
+            data = response.json()
+            if not isinstance(data, list) or not all(isinstance(item, str) for item in data):
+                raise ValueError('Remote file must contain a list of strings')
+            self.add_words(data)
+        elif 'text/plain' in content_type:
+            lines = response.text.splitlines()
+            for line in lines:
+                self.add_word(line.strip())
+        else:
+            raise ValueError(f'Unsupported Content-Type: {content_type}')
 
     def clear(self):
         """Remove all filtered words"""
