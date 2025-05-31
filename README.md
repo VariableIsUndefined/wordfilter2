@@ -11,7 +11,8 @@
 - 🧩 Optional partial or exact word matching
 - 🔠 Case-insensitive or case-sensitive filtering
 - ✏️ Replace filtered words with a character or a custom function
-- 📁 Load word lists from files and save them back
+- 📁 Load word lists from files (txt and json only for now) and save them back
+- 🌐 Load words from URLs
 
 ## Installation
 
@@ -75,8 +76,11 @@ print(wf.filter("This is a spoiler."))  # Output: This is a [SPOILER].
 -----
 
 ```python
-# Load words from a .txt file (one word per line)
+# Load words from a .txt or .json file (one word per line)
 wf.load_from_file("banned_words.txt")
+
+# Load words from URL (json or plain/text Content-Type)
+wf.load_from_url("https://your_url/goes_here.json")
 
 # Save the current word list
 wf.save_to_file("output_words.txt")
