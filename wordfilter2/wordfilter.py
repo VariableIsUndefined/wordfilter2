@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from typing import Callable
+from typing import Callable, Optional, Set
 
 import requests
 
@@ -29,11 +29,42 @@ class WordFilter:
         if replace_with_func is not None and not callable(replace_with_func):
             raise TypeError('`replace_with_func` must be a callable or None')
 
-        self.words: set[str] = set()
+        self.words: Set[str] = set()
         self.ignore_case: bool = ignore_case
         self.partial_match: bool = partial_match
         self.replace_with: str = replace_with
         self.replace_with_func: Callable[[str], str] = replace_with_func
+
+        self._regex_cache: Optional[re.Pattern] = None
+        self._last_words_hash: int = 0
+
+    def _invalidate_cache(self) -> None:
+        """Clearing cache upon updating words."""
+        self._regex_cache = None
+        self._last_words_hash = 0
+
+    def _get_cached_regex(self) -> re.Pattern:
+        """Creates or returns cache regex."""
+        current_words_hash = hash(frozenset(self.words))
+        if self._regex_cache is not None and self._last_words_hash == current_words_hash:
+            return self._regex_cache
+
+        if not self.words:
+            self._regex_cache = re.compile(r"(?!)")
+            self._last_words_hash = current_words_hash
+            return self._regex_cache
+
+        normalized_banned = map(self.normalize, self.words)
+        pattern_str = "|".join(re.escape(word) for word in normalized_banned)
+        if self.partial_match:
+            pattern = f"({pattern_str})"
+        else:
+            pattern = fr"\b({pattern_str})\b"
+
+        flags = re.IGNORECASE if self.ignore_case else 0
+        self._regex_cache = re.compile(pattern, flags | re.UNICODE)
+        self._last_words_hash = current_words_hash
+        return self._regex_cache
 
     def normalize(self, word: str) -> str:
         """
@@ -61,6 +92,7 @@ class WordFilter:
             raise TypeError('Word must be a string')
 
         self.words.add(self.normalize(word.strip()))
+        self._invalidate_cache()
 
     def add_words(self, words: set[str] | list[str] | tuple[str]) -> None:
         """
@@ -96,6 +128,7 @@ class WordFilter:
             raise TypeError('Word must be a string')
 
         self.words.discard(self.normalize(word.strip()))
+        self._invalidate_cache()
 
     def filter(self, text: str) -> str:
         """
@@ -120,15 +153,7 @@ class WordFilter:
         if not self.words:
             return text
 
-        normalized_banned = set(map(self.normalize, self.words))
-        pattern_str = "|".join(re.escape(word) for word in normalized_banned)
-        if self.partial_match:
-            pattern = f"({pattern_str})"
-        else:
-            pattern = f"\\b({pattern_str})\\b"
-
-        flags = re.IGNORECASE if self.ignore_case else 0
-        regex = re.compile(pattern, flags | re.UNICODE)
+        regex = self._get_cached_regex()
 
         def replace(match: re.Match) -> str:
             word = match.group()
@@ -162,11 +187,7 @@ class WordFilter:
         if not self.words:
             return False
 
-        normalized_banned = set(map(self.normalize, self.words))
-        pattern_str = "|".join(re.escape(word) for word in normalized_banned)
-        pattern = f"({pattern_str})" if self.partial_match else f"\\b({pattern_str})\\b"
-        flags = re.IGNORECASE if self.ignore_case else 0
-        regex = re.compile(pattern, flags | re.UNICODE)
+        regex = self._get_cached_regex()
         return bool(regex.search(text))
 
     def load_from_file(self, path: str) -> None:
@@ -251,3 +272,4 @@ class WordFilter:
     def clear(self) -> None:
         """Remove all filtered words"""
         self.words.clear()
+        self._invalidate_cache()
