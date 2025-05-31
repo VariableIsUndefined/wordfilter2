@@ -33,7 +33,7 @@ class WordFilter:
         self.ignore_case: bool = ignore_case
         self.partial_match: bool = partial_match
         self.replace_with: str = replace_with
-        self.replace_with_func = replace_with_func
+        self.replace_with_func: Callable[[str], str] = replace_with_func
 
     def normalize(self, word: str) -> str:
         """
