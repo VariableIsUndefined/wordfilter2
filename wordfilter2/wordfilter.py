@@ -1,10 +1,14 @@
 import os
 import re
+import json
 from typing import Callable
 
 
 class WordFilter:
-    ALLOWED_EXTENSIONS = {'txt'}
+    ALLOWED_EXTENSIONS = {
+        'txt',
+        'json'
+    }
 
     def __init__(self,
                  ignore_case: bool=True,
@@ -70,7 +74,7 @@ class WordFilter:
         if not words:
             raise ValueError('No words provided')
 
-        if not isinstance(words, (set, list, tuple)):
+        if not isinstance(words, (set, list, tuple)) or not all(isinstance(word, str) for word in words):
             raise TypeError('Words must be a set, list or tuple')
 
         for word in words:
@@ -89,7 +93,7 @@ class WordFilter:
         if not isinstance(word, str):
             raise TypeError('Word must be a string')
 
-        self.words.discard(word)
+        self.words.discard(self.normalize(word.strip()))
 
     def filter(self, text: str) -> str:
         """
@@ -126,12 +130,12 @@ class WordFilter:
         words_pattern = '|'.join(re.escape(word) for word in normalized_banned)
 
         if self.partial_match:
-            pattern = fr'\b\w*({words_pattern})\w*\b'
+            pattern = fr'({words_pattern})'
         else:
             pattern = fr'\b({words_pattern})\b'
 
         flags = re.IGNORECASE if self.ignore_case else 0
-        regex = re.compile(pattern, flags)
+        regex = re.compile(pattern, flags | re.UNICODE)
         result = regex.sub(replace, text)
 
         return re.sub(" +", " ", result)
@@ -174,6 +178,7 @@ class WordFilter:
             TypeError: If path is not a string.
             FileNotFoundError: If the file does not exist.
             ValueError: If the file has an unsupported extension.
+            ValueError: If the JSON list has non-strings elements.
         """
         if not isinstance(path, str):
             raise TypeError('Path must be a string')
@@ -181,12 +186,20 @@ class WordFilter:
         if not os.path.isfile(path):
             raise FileNotFoundError(f'File {path} not found')
 
-        if path.split('.')[-1] not in self.ALLOWED_EXTENSIONS:
-            raise ValueError(f'File extension {path.split(".")[-1]!r} not allowed')
+        path_ext = path.split(".")[-1]
+
+        if path_ext not in self.ALLOWED_EXTENSIONS:
+            raise ValueError(f'File extension {path_ext!r} not allowed')
 
         with open(path, 'r', encoding='utf-8') as file:
-            for line in file:
-                self.words.add(line.strip())
+            if path_ext == "json":
+                data = json.load(file)
+                if not isinstance(data, list) or not all(isinstance(item, str) for item in data):
+                    raise ValueError('File must contain a list of strings')
+                self.add_words(data)
+            elif path_ext == "txt":
+                for line in file:
+                    self.add_word(line)
 
     def save_to_file(self, path: str) -> None:
         """
