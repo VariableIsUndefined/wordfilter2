@@ -1,26 +1,22 @@
-# wordfilter2
+# WordFilter2
 
-`wordfilter2` is a lightweight and fast Python module for filtering and censoring words in text. It is designed to
-detect and optionally replace offensive, sensitive, or unwanted terms using customizable options such as case
-sensitivity, partial matching, and replacement strategies.
+A powerful and customizable library for filtering profanity in Python.
+
+[![PyPI version](https://img.shields.io/pypi/v/wordfilter2)](https://pypi.org/project/wordfilter2/) 
 
 ## Features
 
 -----
 
-- ✅ Add or remove custom words to filter
-- 🔍 Detect profanity or unwanted words in a given text
-- 🧩 Optional partial or exact word matching
-- 🔠 Case-insensitive or case-sensitive filtering
-- ✏️ Replace filtered words with a character or a custom function
-- 📁 Load word lists from files (txt and json only for now) and save them back
-- 🌐 Load words from URLs
+- Case-insensitive filtering
+- Full or partial matching
+- Custom replacement functions
+- Load from local file or URL
+- Supports multiple formats (txt, json)
 
 ## Installation
 
 -----
-
-Install with PyPI:
 
 ```bash
 pip install wordfilter2
