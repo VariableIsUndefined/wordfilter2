@@ -248,23 +248,24 @@ class WordFilter:
             for word in sorted(self.words):
                 f.write(word + "\n")
 
-    def load_from_url(self, url: str) -> None:
+    def load_from_url(self, url: str, timeout: int = 5, max_size: int = 1024 * 1024) -> None:
         """
         Load words from a remote file (txt or json).
 
         Args:
             url (str): URL to the remote file.
-
-        Raises:
-            TypeError: If url is not a string.
-            ValueError: If JSON does not contain any strings.
-            ValueError: if Content-Type is not supported.
+            timeout (int): Max seconds to wait for response.
+            max_size (int): Max size of content in bytes.
         """
-
         if not isinstance(url, str):
             raise TypeError("URL must be a string")
-        response = requests.get(url)
+
+        response = requests.get(url, timeout=timeout)
         response.raise_for_status()
+
+        if len(response.content) > max_size:
+            raise ValueError("Remote file exceeds maximum allowed size")
+
         content_type = response.headers.get("Content-Type", "")
 
         if "json" in content_type:
