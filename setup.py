@@ -5,7 +5,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="wordfilter2",
-    version="1.1.1",
+    version="1.2.0",
     license="MIT",
     author="VariableIsUndefined",
     description="A simple word filter module for Python",
