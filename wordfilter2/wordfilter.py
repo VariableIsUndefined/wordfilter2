@@ -282,3 +282,19 @@ class WordFilter:
         """Remove all filtered words"""
         self.words.clear()
         self._invalidate_cache()
+
+    def find_matches(self, text: str) -> list[str]:
+        """Find censored (matched) words"""
+        regex = self._get_cached_regex()
+        return regex.findall(text)
+
+    def remove_words_containing(self, substring: str) -> None:
+        """
+        Remove all words containing the given substring.
+
+        Args:
+            substring (str): Substring to match for removal.
+        """
+        normalized_sub = self.normalize(substring)
+        self.words = {word for word in self.words if normalized_sub not in word}
+        self._invalidate_cache()
