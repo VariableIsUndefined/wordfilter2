@@ -81,20 +81,26 @@ class WordFilter:
         """
         return word.lower() if self.ignore_case else word
 
-    def add_word(self, word: str) -> None:
+    def add_word(self, word: str, ignore_duplicates: bool=False) -> None:
         """
         Add a single word to the filter list.
 
         Args:
             word (str): Word to be added.
+            ignore_duplicates (bool, optional): If duplicated should be ignored.
 
         Raises:
             TypeError: If word is not a string.
+            ValueError: If word is duplicated.
         """
         if not isinstance(word, str):
             raise TypeError('Word must be a string')
 
-        self.words.add(self.normalize(word.strip()))
+        normalized = self.normalize(word.strip())
+        if not ignore_duplicates and normalized in self.words:
+            raise ValueError(f"Word '{word}' already exists")
+
+        self.words.add(normalized)
         self._invalidate_cache()
 
     def add_words(self, words: set[str] | list[str] | tuple[str]) -> None:
