@@ -16,7 +16,8 @@ class WordFilter:
                  ignore_case: bool=True,
                  partial_match: bool=True,
                  replace_with: str="*",
-                 replace_with_func: Callable[[str], str]=None) -> None:
+                 replace_with_func: Callable[[str], str]=None,
+                 normalize_spaces: bool=True) -> None:
         """
         Initialize a new WordFilter instance.
 
@@ -25,6 +26,7 @@ class WordFilter:
             partial_match (bool): Whether to match partial words.
             replace_with (str): Character or string to replace filtered words with.
             replace_with_func (Callable[[str], str], optional): Custom function to generate replacement for matched words.
+            normalize_spaces (bool): Whether to keep one space between each word.
         """
         if replace_with_func is not None and not callable(replace_with_func):
             raise TypeError('`replace_with_func` must be a callable or None')
@@ -34,6 +36,7 @@ class WordFilter:
         self.partial_match: bool = partial_match
         self.replace_with: str = replace_with
         self.replace_with_func: Callable[[str], str] = replace_with_func
+        self.normalize_spaces: bool = normalize_spaces
 
         self._regex_cache: Optional[re.Pattern] = None
         self._last_words_hash: int = 0
@@ -162,7 +165,7 @@ class WordFilter:
             return self.replace_with * len(word) if len(self.replace_with) == 1 else self.replace_with
 
         result = regex.sub(replace, text)
-        return re.sub(" +", " ", result).strip()
+        return self.normalize_spaces and re.sub(" +", " ", result).strip() or result.strip()
 
     def contains_profanity(self, text: str) -> bool:
         """
